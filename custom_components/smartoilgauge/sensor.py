@@ -30,7 +30,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
     _, coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
     for tank_id in coordinator.data:
-        for cls in (GallonsSensor, PercentSensor, BatterySensor, LastReadSensor):
+        for cls in (
+            GallonsSensor,
+            PercentSensor,
+            ToFillSensor,
+            BatterySensor,
+            LastReadSensor,
+        ):
             entities.append(cls(coordinator, tank_id))
     async_add_entities(entities)
 
@@ -76,10 +82,18 @@ class GallonsSensor(_Base):
     @property
     def extra_state_attributes(self):
         t = self.tank
+        low = _num(t.get("low_level"))
         return {
             "tank_capacity_gal": _num(t.get("nominal")),
+            "fillable_gal": _num(t.get("fillable")),
+            "low_level_percent": round(low * 100) if low is not None else None,
             "sensor_status": t.get("sensor_status"),
         }
+
+
+def _capacity(tank: dict):
+    """Usable capacity: 'fillable' (e.g. 251 of a 275 tank), else nominal."""
+    return _num(tank.get("fillable")) or _num(tank.get("nominal"))
 
 
 class PercentSensor(_Base):
@@ -92,10 +106,27 @@ class PercentSensor(_Base):
 
     @property
     def native_value(self):
-        gal, cap = _num(self.tank.get("sensor_gallons")), _num(self.tank.get("nominal"))
+        gal, cap = _num(self.tank.get("sensor_gallons")), _capacity(self.tank)
         if gal is None or not cap:
             return None
-        return round(gal / cap * 100, 1)
+        return round(min(gal / cap * 100, 100), 1)
+
+
+class ToFillSensor(_Base):
+    key = "to_fill"
+    _attr_name = "Gallons to fill"
+    _attr_device_class = SensorDeviceClass.VOLUME_STORAGE
+    _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+    _attr_icon = "mdi:truck-delivery"
+
+    @property
+    def native_value(self):
+        gal, cap = _num(self.tank.get("sensor_gallons")), _capacity(self.tank)
+        if gal is None or not cap:
+            return None
+        return round(max(cap - gal, 0), 1)
 
 
 class BatterySensor(_Base):
@@ -125,6 +156,9 @@ class LastReadSensor(_Base):
 
     @property
     def native_value(self) -> datetime | None:
+        epoch = _num(self.tank.get("last_read"))
+        if epoch:
+            return dt_util.utc_from_timestamp(epoch)
         raw = self.tank.get("sensor_rt")
         if not raw:
             return None

@@ -21,7 +21,8 @@ Fork of [bergb91-coder/ha-smartoilgauge](https://github.com/bergb91-coder/ha-sma
 | Entity | Notes |
 | --- | --- |
 | Oil level | Gallons remaining; attribute `tank_capacity_gal` |
-| Oil percent | Gallons ÷ tank capacity |
+| Oil percent | Gallons ÷ fillable capacity (e.g. 251 of a 275 gal tank) |
+| Gallons to fill | Fillable capacity − gallons; handy when ordering oil |
 | Battery | `good` / `ok` / `poor` |
 | Last reading | When the gauge last reported |
 

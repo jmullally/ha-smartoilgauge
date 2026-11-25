@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Oil Gauge",
+        "description": "Sign in with the same login you use at app.smartoilgauge.com.",
+        "data": { "username": "Username or email", "password": "Password" }
+      },
+      "reauth_confirm": {
+        "title": "Smart Oil Gauge",
+        "description": "Your Smart Oil Gauge password was rejected. Enter it again.",
+        "data": { "password": "Password" }
+      }
+    },
+    "error": {
+      "invalid_auth": "Username or password rejected by app.smartoilgauge.com.",
+      "cannot_connect": "Could not reach app.smartoilgauge.com. Check the Home Assistant logs."
+    },
+    "abort": {
+      "already_configured": "This account is already set up.",
+      "reauth_successful": "Re-authenticated."
+    }
+  }
+}
